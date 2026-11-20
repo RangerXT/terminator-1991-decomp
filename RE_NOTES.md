@@ -3688,7 +3688,10 @@ labels; a menu action that does stack surgery leaves the C menu loop with a stat
 where to go on. Quirks kept: 4B7E copies the picker's title (meant for the text segment) to
 DS:0002, as ES is DS there; after the name editor the end of the name is found with REPNE
 SCASB for AL as the editor left it - 2 on the VGA screen (0C6B returns at once there), so on
-VGA a name shorter than eight letters is saved without ".CSM" and is never listed again; Esc
+VGA a name shorter than eight letters is saved without ".CSM" and is never listed again (not
+reachable in play: the save starts only from the game menu's action, and that menu opens only
+from the 3D view, frame_input_check, where DS:ADCF is 0 and AL the draw page's low byte, 0,
+so the end is found; a three-letter save from play is "NAME.CSM"); Esc
 in the delete picker that a full list (20 saves) opens restarts the save, so it asks again
 until something is deleted. The game menu runs save and delete in C when its services have
 the machine (`GameMenuServices.machine`), the main menu the load with `MainMenuServices.saves`.
