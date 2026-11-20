@@ -1,0 +1,16 @@
+# Only the decompilation's own code and notes are published. The game's files (executables,
+# data, manual material), the disassembly listing, the emulator snapshots and test
+# recordings (copies of the game's memory), the exported assets and the builds stay local.
+/*
+!/.gitignore
+!/.clang-format
+!/README.md
+!/LICENSE
+!/PROJECT_STATUS.md
+!/RE_NOTES.md
+!/src/
+!/tools/
+!/tests/
+/tests/captures/
+__pycache__/
+*.pyc
