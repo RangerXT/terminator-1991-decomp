@@ -13,15 +13,15 @@ replaces it. The project is also under git (`main`, published on GitHub).
 | | |
 |---|---|
 | Game data | Every file format the game loads is decoded and exported (meshes, city map, collision, images, cutscenes, sound, music, fonts, save files). The six city OBJ exports were audited against the game's own loader. |
-| Game code in C | **Done: 100.0%** of the single-player game code has a C version verified against the original (all 80,987 bytes of segments `0000`, `11BC`, `14A7`, `14B5`, `15AD`, `5776`, `57C5`; 1,069 routines in `tools/names.py` `C_VERSIONS`; `NATIVE` and `DEAD` are empty). That includes the routines that reach the hardware, the BIOS and DOS (through `MachineServices`: ports, software interrupts, and the hardware interrupt that arrives), saving and loading, the program's start with its command line, the sound layer between the game and its drivers, and the 24 routines no path of the game reaches. `python tools/coverage.py` measures it. |
-| Verification | 205 test modules, **201,317 comparisons against the original, 0 failures** (`python tools/difftest.py`, about 17 minutes). Ten live runs of walking and turning on different routes (7,500 frames in all, 2026-11-19) produce frames identical to the original (`tools/frame_demo.py --sequence`). The C code compiles warning-free for Windows x64 and Linux x64. |
+| Game code in C | **Done: 100.0%** of the single-player game code has a C version verified against the original (all 83,511 bytes of segments `0000`, `10BB`, `11BC`, `14A7`, `14B5`, `15AD`, `5776`, `57C5`; 1,128 routines in `tools/names.py` `C_VERSIONS`; `NATIVE` is empty, `DEAD` holds one routine of the music driver that nothing references). That includes the routines that reach the hardware, the BIOS and DOS (through `MachineServices`: ports, software interrupts, and the hardware interrupt that arrives), saving and loading, the program's start with its command line, the sound layer between the game and its drivers, the FM music driver `10BB` (`src/fmdrv.c`, added 2026-11-20), and the 24 routines no path of the game reaches. `python tools/coverage.py` measures it. |
+| Verification | 206 test modules, **204,861 comparisons against the original, 0 failures** (`python tools/difftest.py`, about 18 minutes). Ten live runs of walking and turning on different routes (7,500 frames in all, 2026-11-19) produce frames identical to the original (`tools/frame_demo.py --sequence`). The C code compiles warning-free for Windows x64 and Linux x64. |
 
 Out of scope by decision (the C calls them by address through `ProgramServices.call`):
 
 - `151B` serial link play (2,327 bytes): the shipped `TERM.EXE` refuses link mode before
   gameplay; `GAME.EXE` accepts it but stops with Error 25.
-- The sound drivers: `5B67` sample player and the Creative Labs drivers `0FBA` (FM), `101F`
-  (CT-VOICE), `10BB` (FMDRV) (7,404 bytes).
+- The other sound drivers: `5B67` sample player and the Creative Labs drivers `0FBA` (FM) and
+  `101F` (CT-VOICE) (4,880 bytes). The music driver `10BB` (FMDRV) is translated.
 
 ## How the C code is built
 

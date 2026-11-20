@@ -1,8 +1,8 @@
 """How much of the single-player game code is translated: function sizes from
 disasm/functions.csv (python tools/disasm.py) against tools/names.py, where C_VERSIONS lists
 the routines with a verified C version and NATIVE those that only reach the hardware or DOS
-and are left to the host, and DEAD the code proven unreachable. Segments counted: 0000, 11BC, 14A7, 14B5, 15AD, 5776,
-57C5 (the serial link 151B and the sound drivers 0FBA, 101F, 10BB, 5B67 are left out, see
+and are left to the host, and DEAD the code proven unreachable. Segments counted: 0000, 10BB (the FM driver), 11BC, 14A7,
+14B5, 15AD, 5776, 57C5 (the serial link 151B and the drivers 0FBA, 101F, 5B67 are left out, see
 PROJECT_STATUS.md).
 
 usage:
@@ -16,7 +16,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 import names  # noqa: E402
 
-SEGS = {0x0000, 0x11BC, 0x14A7, 0x14B5, 0x15AD, 0x5776, 0x57C5}
+SEGS = {0x0000, 0x10BB, 0x11BC, 0x14A7, 0x14B5, 0x15AD, 0x5776, 0x57C5}
 native = getattr(names, 'NATIVE', {})
 dead = getattr(names, 'DEAD', {})
 total = done = host = unreachable = 0

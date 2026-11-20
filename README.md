@@ -11,9 +11,9 @@ that verify it, and the research notes. To run the tests you need your own copy 
 
 | | |
 |---|---|
-| The game code in C | **Complete.** All 80,987 bytes of the single-player code (segments `0000`, `11BC`, `14A7`, `14B5`, `15AD`, `5776`, `57C5`; 1,069 routines) have a C version verified against the original, including the parts that reach the hardware, the BIOS and DOS, saving and loading, the start-up, the sound layer, and the routines no path of the game reaches. |
-| Verification | 205 test modules, 201,317 comparisons against the original, 0 failures. Live runs of whole frames (7,500 frames over ten routes) match the original byte for byte. |
-| Out of scope | The serial-link game (segment `151B`) and the sound drivers (the sample player `5B67` and the Creative Labs drivers `0FBA`, `101F`, `10BB`); the C calls them by address. |
+| The game code in C | **Complete.** All 83,511 bytes of the single-player code and the music driver (segments `0000`, `10BB`, `11BC`, `14A7`, `14B5`, `15AD`, `5776`, `57C5`; 1,128 routines) have a C version verified against the original, including the parts that reach the hardware, the BIOS and DOS, saving and loading, the start-up, the sound layer, the FM music driver, and the routines no path of the game reaches. |
+| Verification | 206 test modules, 204,861 comparisons against the original, 0 failures. Live runs of whole frames (7,500 frames over ten routes) match the original byte for byte. |
+| Out of scope | The serial-link game (segment `151B`) and the other sound drivers (the sample player `5B67` and the Creative Labs drivers `0FBA`, `101F`); the C calls them by address. |
 
 The details are in [PROJECT_STATUS.md](PROJECT_STATUS.md); the evidence for every routine,
 data format and quirk is in [RE_NOTES.md](RE_NOTES.md) (long, in the order the work was done).

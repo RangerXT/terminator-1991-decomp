@@ -1435,6 +1435,15 @@ API int sample_init(Game *g, const ProgramServices *host, CpuRegs *r);
 API int sound_memory_free(Game *g, const ProgramServices *host, CpuRegs *r);
 API int sample_stop(Game *g, const ProgramServices *host, CpuRegs *r);
 
+/* fmdrv.c: the FM music driver of segment 10BB (Creative's SBFMDRV, for CMF songs on the
+ * OPL2), its functions (10BB:0000 by BX) and its interrupt handlers; its data stay in its
+ * segment; the ports, the timer and the interrupts through the machine. fmdrv_timer returns
+ * how often the interrupt goes on to the old INT 8 (the far pointer at 10BB:000E), which the
+ * caller runs; after fmdrv_keyboard the caller runs the old INT 9 (10BB:0012). */
+API int fmdrv_call(Game *g, const MachineServices *mc, CpuRegs *r);
+API int fmdrv_timer(Game *g, const MachineServices *mc);
+API int fmdrv_keyboard(Game *g, const MachineServices *mc);
+
 /* unreachable.c: the routines no path of the game reaches, translated register for register */
 API void unused_plane_bits(Game *g, CpuRegs *r);
 API void unused_faces_behind(Game *g, CpuRegs *r);

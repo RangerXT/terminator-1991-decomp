@@ -3777,3 +3777,95 @@ With these, `python tools/coverage.py` counts 100.0%: all 80,987 bytes of segmen
 11BC, 14A7, 14B5, 15AD, 5776 and 57C5 have a verified C version (1,069 routines in
 `C_VERSIONS`; `NATIVE` and `DEAD` are empty). Out of scope remain the serial link (151B) and
 the drivers (0FBA, 101F, 10BB, 5B67), which the C calls by address.
+
+## The FM music driver in C (2026-11-20)
+
+`src/fmdrv.c` = segment 10BB, "FMDRV": Creative's SBFMDRV for CMF songs, built into the
+executable. Its functions by BX at 10BB:0000 (dispatcher 0D28, busy flag 1C7 giving FFF8h):
+0 version (word 0C), 1 the status byte's address (DX:AX, the old one back, the new one
+zeroed), 2 instruments (CX of 16 bytes at DX:AX), 3 the system clock's divisor (32), 4 the
+driver clock's (34, programmed at once), 5 transpose (42), 6 play (DX:AX: FFFEh while
+playing), 7 stop, 8 reset (its own sixteen instruments at 10BB:0048), 9 pause, 10 go on
+(both FFFDh / FFFCh with the carry set in the wrong state), 11 a user trap called on SysEx
+(the game sets none); FFFFh set-up, FFFEh shut-down, FFFDh the port base. The data stay at
+their offsets in the driver's segment (listed at the top of the file).
+
+Set-up (0FED): the OPL2 found by its timer 1 (registers 1, 4, 2 through base + 8 with five
+status reads after each write, C0h awaited within 64 reads), the port delays measured
+(0EFE: the timer at 98BAh, only IRQ 0 unmasked, INT 8 at 0EF5 which inverts AX; the loops
+between two interrupts / 8192 + 1, and six times that less five), the base moved to the FM
+ports (+ 8), the status byte at 10BB:01C8, INT 8 taken (0C83) and INT 9 (0CF3).
+
+Playing: the timer interrupt counts down the delay of the next event (32 bits at 22); at its
+end the events due are run (092B; running status; 8x / 9x notes, Bx controllers 66h marker
+to the status byte, 67h drums on or off, 68h / 69h bends of a quarter of the value, Cx
+programs modulo the instrument count, Ax / Ex skip two bytes, Dx one, F0 / F7 a length,
+F2 / F3 two / one, FC stop, FF meta with 2Fh the end). Voices: one of the channel's
+released, a free one, any released, else the one started longest ago (keyed off). Each
+interrupt then adds the timer's divisor (36) to an accumulator and passes the interrupt to
+the old INT 8 each time it reaches the system clock's divisor (32, FFFFh: 18.2 Hz).
+
+The driver's own quirks, kept in C: its silence (0631) means to write the release register
+83h + operator but reloads AL first, so 13h goes to register 83h nine times; its voice
+set-up (067A) writes the instrument's last byte to register operator + voice (00, 02, 04,
+0B, 0D, 0F, 16, 18, 1A) instead of C0h + voice; the pitch bend is set by channel but read by
+voice; a note bent past the top of an octave is set to the top of the scale (17Fh, block 7)
+unless it already was in the highest octave (the comparison is the wrong way round); a
+program change with no instruments would loop for ever; the keyboard handler's Ctrl+Alt
+silence needs a make code of 83h, which cannot be; 0DFF (a saved vector by number) is in no
+table.
+
+With the game's sample player the two share the timer: the driver sets the song's rate and
+the BIOS gets 18.2 interrupts a second, but the sample player's set-up (5B67:08C5) puts the
+timer at 60 Hz without the driver knowing ([36] stays FFFFh, so every interrupt is passed
+on, 60 a second, until a song is started). While a song plays, INT 1Ch (5B67:0954: the
+looping sample, the countdown AA93, the firing range's timer A964) runs at 18.2 Hz instead
+of 60. A sample on the PC speaker or the AdLib DAC takes INT 8 itself (the song stands
+still meanwhile), and at its end 0735 sets the timer back to 60 Hz, not to the song's rate:
+from then on the song's ticks come 60 a second whatever its tempo, until the next song.
+
+`tests/test_fmdrv.py`: 3,544 calls and interrupts on an OPL2 model at 388h, from the
+set-up (three timer interrupts raised in its measuring loops) through three songs (the
+game's SONG1.CMF, and two made to reach drums, bends past the octave both ways, more notes
+than voices, programs past the count, running status, Ax / Dx / Ex, SysEx, F2 / F3, the
+ends by FFh 2Fh and FCh), pauses, a busy driver, a second play, stops, a reset, the keyboard
+handler and the shut-down; each port access, interrupt, register and byte of memory checked
+(not the timer handler's own stack in the driver's segment, E12h..E76h, and its saved SS:SP
+at 44h). The counted segments now include 10BB: `python tools/coverage.py` gives 100.0% of
+83,511 bytes.
+
+## The game's samples and the sample player's timing (2026-11-20)
+
+The .RS files: a 5-byte signature ("STEVE" or "CRAIG"), at + 5 the timer interrupts each
+value lasts (3 in every file), at + 7 the length with the final 0, from + 20h the values,
+6 bits (1..63, the width of the speaker's pulse), up to a 0. The PC speaker's player (05C6)
+and the AdLib DAC's (0081, which writes the values to the OPL's data port) work alike:
+nothing while their samples are off (DS:11CC) or the machine measured too slow (DS:AA85
+below 160h; above it for the DAC); while a sample plays (DS:AA83) a request with a higher
+number (CL, the request's id, against DS:AA7E) is ignored and any other replaces it at
+once. The timer goes to divisor 48h (16,572 interrupts a second: 5,524 values a second for
+CH = 3) and INT 8 to their handler (0657 / 011B, the old vector at DS:AA7F), the PIC masks
+all but the timer and the keyboard; every 114h / CH values the handler calls the INT 1Ch
+handler 0954 itself, so the game's 60 Hz counters go on while the BIOS's tick count stands;
+at the 0 (0735) INT 8 and the 60 Hz timer come back and AA83 clears.
+
+## Game speed (2026-11-20)
+
+Everything in play counts frames: walking moves the speed (record + 0Ah, the HUD's number,
+about 8.5 units a frame) each frame, the world clock (DE37: 6 world steps to the second,
+DS:0348 seconds, DS:1174 minutes) once a frame, and every timer of the game. Nothing scales
+by elapsed time, so the game ran as fast as the machine drew. In the emulator a frame of
+play is about 540,000 instructions, of which about 300,000 are work (the rest waits for the
+retrace): about 7 frames a second on a 386SX-16, 15-20 on a 386DX-33. The game's own
+numbers agree: the heartbeat sample, restarted every 12 frames, beats 75 a minute at 15
+frames a second; the world clock would keep real time at 6; the speedometer (twice the
+units a frame in a car) would read true miles an hour at about 20, at 22 units a metre.
+
+## The phone book's Esc (2026-11-20)
+
+The phone book closes on any key in the buffer, sets mode 0Dh and resets the camera, which
+loads the black palette DS:1521 and asks for the game's (DS:1510) at the end of the frame.
+If the key was Esc and is still down when the frame goes on, the frame's input check opens
+the game menu before that: a menu drawn while the palette is black. On the machines of the
+day the reload took long enough for the key to be let go; on a fast one the menu is
+invisible.
