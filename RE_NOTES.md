@@ -3869,3 +3869,24 @@ If the key was Esc and is still down when the frame goes on, the frame's input c
 the game menu before that: a menu drawn while the palette is black. On the machines of the
 day the reload took long enough for the key to be let go; on a fast one the menu is
 invisible.
+
+## The engine's starter loop with the sound off (2026-11-20)
+
+Holding S in a car sets DS:AA94 to FFh (driving_step), the count of times the INT 1Ch handler
+0954 plays the looping sample again (DS:A876 its segment, DS:A878 its request) whenever none
+is playing. Only sound_request (89A2) sets A876 / A878, and only with the sound on (DS:0361).
+With the sound off the loop still plays: A876 as the sound last left it, or 0 when the sound
+was never on, in which case the "sample" is the interrupt table from 0000:0020 (CH from
+0000:0005) up to its first 0 byte, a click from the speaker. Seen in the emulator from the
+frameloop_driving capture: within ten frames of S held with 0361 = 0, 0954 calls 0818 and
+0818 the speaker's 05C6. The sound switch does not silence the starter.
+
+## Captures with patched code (2026-11-20)
+
+tools/driving_capture.py writes RET (C3h) over the first byte of 8A9E (the car's sound
+group), 89A2 (sound_request) and 0A4F while preparing its state, and the captures made from
+it keep them in the game's memory: frameloop_driving and driving_live have C3h there (the
+original bytes are 80h, F6h, 50h). In those captures the original never loads the car's
+sample group and never plays a sound; a test that runs into those routines from them
+compares against a patched game. The sound group in them is still the on-foot one
+(DS:A6E9 = 3).
