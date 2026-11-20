@@ -3914,3 +3914,25 @@ or the next of the chained samples (CS:0781 / 0782, as the other devices do), el
 DMA masked, the vector back, the IRQ masked, AA83 and CS:0781 clear. 054D sends D0h (halt)
 when a sample plays and ends it with 04DC. The card plays the files' 6-bit values as 8-bit
 unsigned samples: about a quarter of full scale, offset well below the middle.
+
+## The player's position and heading; three facts about the city (2026-11-20)
+
+- **Position and heading.** Besides the local x and z at +0 and +4, an actor's record keeps
+  its absolute position as two 32-bit values: x at +34/+36, z at +42/+44. x = sector
+  column x 65536 + east; z = sector row x 65536 + south, so z grows southward as the
+  sector files' rows do, and inside a 1,024-unit cell the local z runs the other way
+  (1024 - z mod 1024, as the map screen shows it). The heading at +6 (512 to a turn)
+  faces north at 0 and south at 256. Checked from a known position against a row of shops
+  in view, and by placing the player and reading the draw list.
+- **Griffith Observatory** is in the city: `LA.DEF`'s `obsrv1` and `obsrv2`, each placed
+  once, with the obelisk `OblskQ` (the Astronomers Monument) beside them, in sector LAA2
+  at east 51,712 and south 8,828 to 9,711 (x 117,248).
+- **Passers-by hold at ten.** `startup_position` sets the deferred-respawn count DS:116E to
+  10 for a new game, and the walk spawns them from it. `figure_remove` of a passer-by
+  (`figure.c`) lowers DS:119C and, during an alert or a fight, adds one to DS:116E;
+  otherwise the caller (`remove_civilian`, `figurewalk.c`) spawns one at once. So the
+  number is the same by day and by night.
+- **The main menu's picture** (`Shoot256.img`) has its option text drawn in palette entries
+  240 to 254, the red hotkey letters in entry 88; within the text's areas (x 4 to 72 and
+  y 4 to 196; x 248 to 300 and y 4 to 30; x 248 to 318 and y 166 to 196) no other part of
+  the picture uses them, so the text can be told from the picture by colour alone.
