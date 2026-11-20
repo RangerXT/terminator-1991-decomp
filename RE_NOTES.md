@@ -3890,3 +3890,24 @@ original bytes are 80h, F6h, 50h). In those captures the original never loads th
 sample group and never plays a sound; a test that runs into those routines from them
 compares against a patched game. The sound group in them is still the on-foot one
 (DS:A6E9 = 3).
+
+## The Sound Blaster's sample routines (2026-11-20)
+
+With `sblaster` the device is 4 and 5B67:0786 sets the play routine to 02FC and the stop to
+054D (base port DS:A863, IRQ DS:A865: 220h and 3 in a run whose environment has no
+BLASTER setting). 02FC plays the .RS
+sample that 0818 passes (ES:SI at +20h, CH the byte at +5, BX the word at +7, CL the
+request): nothing while the samples are off (DS:11CC); while one plays (AA83), a request
+with a number not below DS:AA7E is ignored and any other stops it first (054D). The DSP gets
+command 40h and a time constant, the byte at DS:A85E + CH negated (A85E: 00 3C 78 B5 F1...;
+for the files' CH of 3, B5h: 4Bh, 1,000,000 / (256 - 75) = 5,524 values a second, the rate
+the speaker and the DAC play at too); if the DSP does not answer it gives up. The card's
+interrupt (vector 8 + IRQ) goes to 03D0, the old one kept at DS:A872, the IRQ unmasked; the
+sample's linear address and length go to DS:A866 (page), A867, A86C / A86E, A870 (last
+byte) and A86B (pages spanned), 045C programs DMA channel 1 (mode 49h) up to the page's end
+and sends DSP 14h with the count, and AA83 is set. No timer: INT 8 and the PIT stay as they
+are. 03D0 acknowledges the card (2xEh), sends the rest of a transfer that crossed a page,
+or the next of the chained samples (CS:0781 / 0782, as the other devices do), else 04DC:
+DMA masked, the vector back, the IRQ masked, AA83 and CS:0781 clear. 054D sends D0h (halt)
+when a sample plays and ends it with 04DC. The card plays the files' 6-bit values as 8-bit
+unsigned samples: about a quarter of full scale, offset well below the middle.
